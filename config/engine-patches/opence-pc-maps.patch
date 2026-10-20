@@ -1,0 +1,51 @@
+diff --git a/source/cache/cache_files.c b/source/cache/cache_files.c
+index 820b247..4e761d9 100644
+--- a/source/cache/cache_files.c
++++ b/source/cache/cache_files.c
+@@ -869,7 +869,9 @@ boolean cache_file_header_verify(
+ 	if (header->header_signature != CACHE_FILE_HEADER_SIGNATURE ||
+ 		header->footer_signature != CACHE_FILE_FOOTER_SIGNATURE ||
+ 		header->file_length < 0 ||
+-		header->file_length > 0x11600000 ||
++		/* port: the solo slot's size (0x11600000 on the Xbox;
++		cache_files_windows.c) */
++		header->file_length > 0x14000000 ||
+ 		/* port: its name ends within its field (csstrlen read on past it) */
+ 		!memchr(header->name, 0, sizeof(header->name)))
+ 	{
+diff --git a/source/cache/cache_files_windows.c b/source/cache/cache_files_windows.c
+index 995e834..63b48e9 100644
+--- a/source/cache/cache_files_windows.c
++++ b/source/cache/cache_files_windows.c
+@@ -204,9 +204,12 @@ enum
+ 	MAXIMUM_CACHE_FILES = 20,
+ 	CACHE_FILE_THREAD_STACK_SIZE = 0x4000,
+ 
+-	SOLO_CACHE_FILE_MAXIMUM_SIZE = 0x11600000,
++	/* port: larger solo and multiplayer slots (0x11600000 and 0x02F00000 on
++	the Xbox) for caches built from Halo PC's tags, whose bitmaps and sounds
++	are larger than the Xbox's (a10 287 MB, multiplayer levels 61 to 71 MB) */
++	SOLO_CACHE_FILE_MAXIMUM_SIZE = 0x14000000,
+ 	MAIN_MENU_CACHE_FILE_MAXIMUM_SIZE = 0x02300000,
+-	MULTIPLAYER_CACHE_FILE_MAXIMUM_SIZE = 0x02F00000,
++	MULTIPLAYER_CACHE_FILE_MAXIMUM_SIZE = 0x06000000,
+ };
+ 
+ /* ---------- macros */
+diff --git a/source/cache/physical_memory_map.h b/source/cache/physical_memory_map.h
+index c58e3c4..250fc50 100644
+--- a/source/cache/physical_memory_map.h
++++ b/source/cache/physical_memory_map.h
+@@ -11,8 +11,10 @@ header included in hcex build.
+ /* ---------- constants */
+ 
+ /* port: the tag cache's size, which the loader checks a map's tag data and
+-structure bsps against (cache_files.c) */
+-#define TAG_CACHE_SIZE 0x1600000
++structure bsps against (cache_files.c); up to the game state at 0x81A00000
++(0x1600000 on the Xbox), for caches built from Halo PC's tags, which take up
++to 22.32 MB with their largest bsp (d20) */
++#define TAG_CACHE_SIZE 0x165A000
+ 
+ /* ---------- macros */
+ 

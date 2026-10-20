@@ -32,6 +32,14 @@ ENGINE="$WORK/vol/engine"
 if [ ! -d "$ENGINE/.git" ]; then
 	git clone -q "$URL" "$ENGINE"
 fi
+# (this fork's own engine patches, config/engine-patches/*.patch, applied
+# below: taken back out first, so that a rebuild starts from a clean checkout)
+for PATCH in "$ROOT"/config/engine-patches/*.patch; do
+	[ -f "$PATCH" ] || continue
+	if git -C "$ENGINE" apply --reverse --check "$PATCH" 2>/dev/null; then
+		git -C "$ENGINE" apply --reverse "$PATCH"
+	fi
+done
 if [ -n "$(git -C "$ENGINE" status --porcelain --untracked-files=no)" ]; then
 	echo "Xbox upstream checkout has local edits; preserve them before rebuilding" >&2
 	exit 1
@@ -40,6 +48,16 @@ if [ "$(git -C "$ENGINE" rev-parse HEAD)" != "$REV" ]; then
 	git -C "$ENGINE" fetch -q origin
 	git -C "$ENGINE" checkout -q "$REV"
 fi
+for PATCH in "$ROOT"/config/engine-patches/*.patch; do
+	[ -f "$PATCH" ] || continue
+	echo "applying engine patch $(basename "$PATCH")" >&2
+	git -C "$ENGINE" apply "$PATCH"
+	# (the checkout stays at the pinned revision and reads as clean, which
+	# guest_adaptation.py requires; the reverse step above restores it)
+	git -C "$ENGINE" apply --numstat "$PATCH" | cut -f3 | while read -r FILE; do
+		git -C "$ENGINE" update-index --assume-unchanged "$FILE"
+	done
+done
 
 # ---------- the NDK pieces: upstream's guest build only needs lld, llvm-ar
 # and the Khronos OpenGL ES headers
