@@ -63,7 +63,8 @@ MAC_ENTITLEMENTS = {
     'com.apple.security.network.server': True,
     'com.apple.security.files.user-selected.read-write': True,
 }
-BUNDLE_ID = 'dev.halopad.HaloPad'
+# (HALOPAD_BUNDLE_ID: this fork's App Store Connect app, .github/scripts/testflight.sh)
+BUNDLE_ID = os.environ.get('HALOPAD_BUNDLE_ID', 'dev.halopad.HaloPad')
 STATE = ROOT / 'generated' / 'halopad-disk-ios'
 # the Xbox engine, when it was built on this Mac (scripts/xbox/build-ios.sh; docs/XBOX-ENGINE.md)
 XBOX_OUT = ROOT / 'ref' / 'xbox-build' / 'out'
