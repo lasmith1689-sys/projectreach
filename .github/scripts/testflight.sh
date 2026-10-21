@@ -28,6 +28,23 @@ scripts/builder/build.sh --xbox-only --app-version "$APP_VERSION" --app-build "$
 mkdir -p "$ARCHIVE/Products/Applications"
 ditto -x -k "$OUT/HaloPad-unsigned.ipa" "$OUT/ipa"
 mv "$OUT/ipa/Payload/HaloPad.app" "$APP"
+# ---------- the player's own maps, inside the app (HaloPadXbox.m links them):
+# the release asset is the disc image converted from the player's Halo PC,
+# encrypted with the HALOPAD_DATA_KEY secret
+if [ -n "${HALOPAD_DATA_KEY:-}" ]; then
+  echo "▶ Adding the maps"
+  gh release download "$HALOPAD_DATA_RELEASE" -R "$GITHUB_REPOSITORY" -p halopad-data.bin -D "$OUT"
+  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$OUT/halopad-data.bin" -out "$OUT/halo.xiso" \
+    -pass env:HALOPAD_DATA_KEY
+  rm -f "$OUT/halopad-data.bin"
+  python3 scripts/xbox/extract-maps.py "$OUT/halo.xiso" "$APP/data/xbox" > "$OUT/maps.json"
+  rm -f "$OUT/halo.xiso"
+  if [ ! -f "$APP/data/xbox/maps/ui.map" ]; then
+    echo "::error::The maps did not reach the app."
+    exit 1
+  fi
+  echo "::notice title=Maps::$(ls "$APP/data/xbox/maps" | wc -l | tr -d ' ') maps, $(du -sh "$APP/data/xbox/maps" | cut -f1), inside the app."
+fi
 info="$APP/Info.plist"
 sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
 sdk_build=$(xcrun --sdk iphoneos --show-sdk-build-version)

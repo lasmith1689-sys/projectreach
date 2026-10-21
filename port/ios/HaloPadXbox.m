@@ -97,10 +97,35 @@ static NSString *xbox_root(void)
 	return [documents stringByAppendingPathComponent:@"Halo Xbox"];
 }
 
+/* this fork's builds carry the player's own maps inside the app
+   (data/xbox/maps, .github/scripts/testflight.sh): the data folder's maps are
+   a link to them, made again when an update has moved the app. Maps a player
+   imported from a disc stay as they are. */
+static void xbox_link_bundled_maps(void)
+{
+	static dispatch_once_t once;
+	dispatch_once(&once, ^{
+		NSFileManager *files = NSFileManager.defaultManager;
+		NSString *bundled = [NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"data/xbox/maps"];
+		NSString *link = [xbox_root() stringByAppendingPathComponent:@"maps"];
+		NSString *target;
+		if (![files fileExistsAtPath:[bundled stringByAppendingPathComponent:@"ui.map"]]) return;
+		target = [files destinationOfSymbolicLinkAtPath:link error:nil];
+		if ([target isEqualToString:bundled]) return;
+		if (!target && [files fileExistsAtPath:link]) return;
+		[files createDirectoryAtPath:xbox_root() withIntermediateDirectories:YES attributes:nil error:nil];
+		[files removeItemAtPath:link error:nil];
+		if ([files createSymbolicLinkAtPath:link withDestinationPath:bundled error:nil])
+			HP_LOG("Xbox: maps linked to the ones inside the app");
+	});
+}
+
 static NSString *xbox_data(void)
 {
 	const char *development = getenv("XG_DATA");
-	return development && *development ? @(development) : xbox_root();
+	if (development && *development) return @(development);
+	xbox_link_bundled_maps();
+	return xbox_root();
 }
 
 static NSString *xbox_saves(void)
