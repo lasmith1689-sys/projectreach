@@ -18,9 +18,11 @@ static inline BOOL HPXboxSupportsQuality(NSDictionary *build)
          [adaptation[@"name"] isEqual:@"network-policy-v1"]);
 }
 
+/* This fork's personal build is for recent iPhones: Sharper unless the
+   player chose Original. */
 static inline BOOL HPXboxSharperSelected(NSUserDefaults *settings)
 {
-    return [[settings objectForKey:HPXboxQualityKey] isEqual:@"sharper"];
+    return ![[settings objectForKey:HPXboxQualityKey] isEqual:@"original"];
 }
 
 static inline void HPXboxApplyQuality(NSDictionary *build, NSUserDefaults *settings)
@@ -31,5 +33,5 @@ static inline void HPXboxApplyQuality(NSDictionary *build, NSUserDefaults *setti
     const char *scale = getenv("HALO_TEST_RENDER_SCALE");
     const char *filter = getenv("HALO_TEST_ANISOTROPY");
     if (!scale || !*scale) setenv("HALO_TEST_RENDER_SCALE", sharper ? "2" : "1", 1);
-    if (!filter || !*filter) setenv("HALO_TEST_ANISOTROPY", sharper ? "4" : "1", 1);
+    if (!filter || !*filter) setenv("HALO_TEST_ANISOTROPY", sharper ? "16" : "1", 1);
 }

@@ -370,6 +370,18 @@ static BOOL xbox_backup_saves(NSError **error)
 			HP_LOG("Xbox: could not write brokers.txt; the server browser will find no games");
 	}
 	{
+		/* this fork's first start: the engine's settings for a recent iPhone (the most detailed
+		   models, finer object shadows, full texture filtering), written only where there is no
+		   config.toml yet, so the player's own changes in Settings are kept */
+		NSString *config = [xbox_data() stringByAppendingPathComponent:@"config.toml"];
+		if (![NSFileManager.defaultManager fileExistsAtPath:config])
+		{
+			NSString *defaults = @"[display]\nmodel_detail = \"highest\"\nshadow_resolution = 512\nanisotropic_filtering = 16\n";
+			if ([defaults writeToFile:config atomically:YES encoding:NSUTF8StringEncoding error:nil])
+				HP_LOG("Xbox: wrote the high-quality defaults to config.toml");
+		}
+	}
+	{
 		NSString *addresses = [NSUserDefaults.standardUserDefaults stringForKey:link_key];
 		if (addresses.length)
 			/* Keep automatic discovery when the player has saved manual peers. */
