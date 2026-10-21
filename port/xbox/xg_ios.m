@@ -1125,7 +1125,10 @@ uint32_t xh_host_sdl_open_audio_stream(uint32_t device, uint32_t spec_address, u
 		xg_log("audio format 0x%x is not supported", spec->format);
 		return 0;
 	}
-	[[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+	/* playback, as the app's scene sets it (HaloPadXboxApp.m): the ambient category is muted by
+	   the Ring/Silent switch, which left the game silent on a phone set to silent */
+	[[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback mode:AVAudioSessionModeDefault
+		options:AVAudioSessionCategoryOptionMixWithOthers error:nil];
 	[[AVAudioSession sharedInstance] setActive:YES error:nil];
 	audio_callback = callback;
 	audio_userdata = userdata;
