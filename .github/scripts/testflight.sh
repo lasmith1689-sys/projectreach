@@ -48,12 +48,16 @@ plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$info"
 # the ad-hoc signature again, over the new Info.plist, keeping the entitlements
 entitlements="$OUT/entitlements.plist"
 codesign -d --entitlements - --xml "$APP" > "$entitlements"
-for key in com.apple.developer.kernel.extended-virtual-addressing com.apple.developer.kernel.increased-memory-limit; do
-  if ! plutil -extract "$key" raw "$entitlements" >/dev/null 2>&1; then
-    echo "::error::The app is missing the $key entitlement HaloPad needs."
-    exit 1
-  fi
-done
+# (plutil -extract reads dots as a key path, so the keys are looked up in Python)
+python3 - "$entitlements" <<'PY'
+import plistlib, sys
+granted = plistlib.load(open(sys.argv[1], 'rb'))
+for key in ('com.apple.developer.kernel.extended-virtual-addressing', 'com.apple.developer.kernel.increased-memory-limit'):
+    if granted.get(key) is not True:
+        print(f'::error::The app is missing the {key} entitlement HaloPad needs.')
+        sys.exit(1)
+print('::notice title=Entitlements::Both memory entitlements are present.')
+PY
 codesign --force --sign - --entitlements "$entitlements" "$APP"
 plutil -p "$info" | grep -E '"CFBundleIdentifier"|"CFBundleShortVersionString"|"CFBundleVersion"|"MinimumOSVersion"|"DTSDKName"|"DTXcode"' || true
 
