@@ -1,3 +1,39 @@
+diff --git a/port/linux/game/menu_tags.c b/port/linux/game/menu_tags.c
+index 9414ea1..6928dda 100644
+--- a/port/linux/game/menu_tags.c
++++ b/port/linux/game/menu_tags.c
+@@ -820,6 +820,17 @@ static long spinner_split(struct halo_menu_widget const *widget, boolean values,
+ 	return count;
+ }
+ 
++/* whether the map's bitmap that a frame names has that frame: Halo PC's
++ui.map, converted to the Xbox's format, has fewer frames in some of them
++(mp_options) than the Xbox's the menus' files were made from. A bitmap the
++map has not got at all is left to map_tag to report. */
++static boolean map_frame_present(struct halo_menu_frame const *data)
++{
++	long group_index = tag_loaded(BITMAP_GROUP_TAG, data->map);
++
++	return group_index == NONE || (data->index >= 0 && data->index < bitmap_group_get(group_index)->bitmaps.count);
++}
++
+ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
+ {
+ 	struct bitmap_group *group = allocate(sizeof(struct bitmap_group));
+@@ -848,9 +859,10 @@ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
+ 		long width = data->width, height = data->height;
+ 
+ 		/* (a frame of the map's: a copy of its bitmap, which the texture cache
+-		loads from the map as its own; in a game map that has not got it,
+-		nothing) */
+-		if (data->map && build.game_map && tag_loaded(BITMAP_GROUP_TAG, data->map) == NONE)
++		loads from the map as its own; in a game map that has not got it, or
++		where the map's bitmap has not got that frame, nothing) */
++		if (data->map && ((build.game_map && tag_loaded(BITMAP_GROUP_TAG, data->map) == NONE) ||
++			!map_frame_present(data)))
+ 		{
+ 			png = BLANK_PNG;
+ 			width = height = PLACEHOLDER_SIZE;
 diff --git a/source/cache/cache_files.c b/source/cache/cache_files.c
 index 820b247..4e761d9 100644
 --- a/source/cache/cache_files.c
