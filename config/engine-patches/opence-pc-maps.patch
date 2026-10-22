@@ -61,7 +61,7 @@ index 2fbe30e..a1cfbb3 100644
  	<widget name="main_menu/difficulty_select/warning_message" type="text" width="210" height="185" string_list="main_menu/difficulty_select/warning_message" font="ui\small_ui" color="#FFFFFFFF">
  	</widget>
 diff --git a/port/linux/game/menu_tags.c b/port/linux/game/menu_tags.c
-index 9414ea1..6928dda 100644
+index 9414ea1..ef25029 100644
 --- a/port/linux/game/menu_tags.c
 +++ b/port/linux/game/menu_tags.c
 @@ -820,6 +820,17 @@ static long spinner_split(struct halo_menu_widget const *widget, boolean values,
@@ -82,17 +82,17 @@ index 9414ea1..6928dda 100644
  static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
  {
  	struct bitmap_group *group = allocate(sizeof(struct bitmap_group));
-@@ -848,9 +859,10 @@ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
+@@ -848,9 +859,11 @@ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
  		long width = data->width, height = data->height;
  
  		/* (a frame of the map's: a copy of its bitmap, which the texture cache
 -		loads from the map as its own; in a game map that has not got it,
--		nothing) */
++		loads from the map as its own; in a map that has not got it (a game
++		map, or Halo PC's ui.map converted to the Xbox's format, which lacks
++		config_controller), or where the map's bitmap has not got that frame,
+ 		nothing) */
 -		if (data->map && build.game_map && tag_loaded(BITMAP_GROUP_TAG, data->map) == NONE)
-+		loads from the map as its own; in a game map that has not got it, or
-+		where the map's bitmap has not got that frame, nothing) */
-+		if (data->map && ((build.game_map && tag_loaded(BITMAP_GROUP_TAG, data->map) == NONE) ||
-+			!map_frame_present(data)))
++		if (data->map && (tag_loaded(BITMAP_GROUP_TAG, data->map) == NONE || !map_frame_present(data)))
  		{
  			png = BLANK_PNG;
  			width = height = PLACEHOLDER_SIZE;
